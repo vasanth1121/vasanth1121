@@ -1,0 +1,1261 @@
+Main Activity:
+package com.example.bookingapplication;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.view.View;
+import android.widget.Button;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+public class MainActivity extends AppCompatActivity {
+
+    FirebaseAuth mAutho;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.activity_main);
+        mAutho = FirebaseAuth.getInstance();
+
+       new Handler().postDelayed(new Runnable() {
+           @Override
+           public void run() {
+               Intent intent = new Intent(MainActivity.this,LoginPage.class);
+               startActivity(intent);
+           }
+       },3000);
+    }
+}
+
+LoginPage:
+package com.example.bookingapplication;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+public class  LoginPage extends AppCompatActivity {
+
+    Button login;
+    EditText email, password;
+    TextView gotoSignUp,forgetPassword;
+    FirebaseAuth mAuth;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_login_page);
+        email = (EditText) findViewById(R.id.login_email);
+        password = (EditText) findViewById(R.id.login_password);
+        login = (Button) findViewById(R.id.loginbtn);
+        gotoSignUp = (TextView) findViewById(R.id.goto_sign_up);
+        mAuth = FirebaseAuth.getInstance();
+        login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                loginUser();
+            }
+        });
+        gotoSignUp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(LoginPage.this, Sign_up_page.class));
+            }
+        });
+    }
+
+    private void loginUser() {
+        String lemail = email.getText().toString();
+        String lpwd = password.getText().toString();
+
+        if (TextUtils.isEmpty(lemail)) {
+            email.setError("Please Enter Email!");
+            email.requestFocus();
+        } else if (TextUtils.isEmpty(lpwd)) {
+            password.setError("Please Enter  Password");
+            password.requestFocus();
+        }
+        else
+        {
+            mAuth.signInWithEmailAndPassword(lemail, lpwd).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                @Override
+                public void onComplete(@NonNull Task<AuthResult> task) {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(LoginPage.this, "Login Successful", Toast.LENGTH_LONG).show();
+                        startActivity(new Intent(LoginPage.this, HomePageActivity.class));
+                    } else {
+                        Toast.makeText(LoginPage.this, "Login Failed" + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+        }
+    }
+}
+
+
+signUpPage :
+package com.example.bookingapplication;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
+
+public class Sign_up_page extends AppCompatActivity {
+
+    FirebaseAuth mAuth;
+    DatabaseReference mdref;
+    EditText emailText, userName, address, password;
+
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_sign_up_page);
+
+        Button signUpBtn = (Button) findViewById(R.id.signUpBtn);
+        TextView gotoLogin = (TextView) findViewById(R.id.goto_login);
+        emailText = (EditText) findViewById(R.id.sign_up_userEmail);
+        userName = (EditText) findViewById(R.id.sign_up_user_Name);
+        address = (EditText) findViewById(R.id.sign_up_address);
+        password = (EditText) findViewById(R.id.sign_up_pass);
+
+        mAuth = FirebaseAuth.getInstance();
+        mdref = FirebaseDatabase.getInstance().getReference();
+        signUpBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                String email = emailText.getText().toString();
+                String user_name = userName.getText().toString();
+                String user_address = address.getText().toString();
+                String pwd= password.getText().toString();
+
+                HashMap<String, Object> hashmap = new HashMap<>();
+                hashmap.put("name", user_name);
+                hashmap.put("email", email);
+                hashmap.put("Address", user_address);
+                hashmap.put("Password",pwd);
+
+                if (TextUtils.isEmpty(email)) {
+                    emailText.setError("Email Cannot Be Empty");
+                    emailText.requestFocus();
+                } else if (TextUtils.isEmpty(user_name)) {
+                    userName.setError("Please Enter User Name..!");
+                    userName.requestFocus();
+                } else if (TextUtils.isEmpty(pwd)) {
+                    password.setError("Please Enter a Password..");
+                    password.requestFocus();
+                } else if (TextUtils.isEmpty(pwd)) {
+                    password.setError("please ReEnter Your Password..");
+                    password.requestFocus();
+
+                } else {
+                    mAuth.createUserWithEmailAndPassword(email, pwd).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                mdref.child("users").child(user_name).setValue(hashmap);
+
+                                Toast.makeText(Sign_up_page.this, "SignUp Successfully", Toast.LENGTH_LONG).show();
+
+                                startActivity(new Intent(Sign_up_page.this, LoginPage.class));
+                            } else {
+                                Toast.makeText(Sign_up_page.this, "SignUp Failed :" + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+
+                            }
+                        }
+                    });
+                }
+            }
+
+        });
+        gotoLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
+
+    }
+}
+
+HomePage:
+package com.example.bookingapplication;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TabHost;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+public class HomePageActivity extends AppCompatActivity {
+    TextView homeUserEmail;
+
+    FirebaseAuth firebaseAuth;
+
+    ImageView homeMenuBtn;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_home_page);
+        firebaseAuth = FirebaseAuth.getInstance();
+
+        homeMenuBtn=(ImageView) findViewById(R.id.home_menu_btn);
+
+        homeMenuBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(HomePageActivity.this,MenuActivity.class));
+            }
+        });
+
+        homeUserEmail = (TextView) findViewById(R.id.homeUserEmail);
+        if (firebaseAuth.getCurrentUser() == null) {
+            finish();
+            startActivity(new Intent(HomePageActivity.this, Sign_up_page.class));
+        }
+
+
+        TabHost host = (TabHost) findViewById(R.id.tabHost);
+        host.setup();
+
+        TabHost.TabSpec spec = host.newTabSpec("Tab One");
+        spec.setContent(R.id.tab1);
+        spec.setIndicator("Cab");
+        host.addTab(spec);
+
+
+        spec = host.newTabSpec("Tab Two");
+        spec.setContent(R.id.tab2);
+        spec.setIndicator("Bus");
+        host.addTab(spec);
+
+        spec = host.newTabSpec("Tab Three");
+        spec.setContent(R.id.tab3);
+        spec.setIndicator("Train");
+        host.addTab(spec);
+
+        spec = host.newTabSpec("Tab Four");
+        spec.setContent(R.id.tab4);
+        spec.setIndicator("Flight");
+        host.addTab(spec);
+
+        Button cab_btn = (Button) findViewById(R.id.cab_book_btn);
+        Button bus_btn = (Button) findViewById(R.id.bus_book_btn);
+        Button train_btn = (Button) findViewById(R.id.train_book_btn);
+        Button flight_btn = (Button) findViewById(R.id.flight_book_btn);
+
+        cab_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(HomePageActivity.this, cabActivity.class));
+            }
+        });
+
+        bus_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(HomePageActivity.this, Bus_List_View.class));
+            }
+        });
+        train_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(HomePageActivity.this, train_list_view.class));
+            }
+        });
+        flight_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(HomePageActivity.this,flightListView.class));
+            }
+        });
+
+    }
+    protected  void onStart() {
+
+        super.onStart();
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        String userID = user.getUid();
+        homeUserEmail.setText(user.getEmail());
+    }
+
+}
+
+cabActiviy:
+package com.example.bookingapplication;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.Button;
+import android.widget.DatePicker;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.TimePicker;
+
+import java.util.Calendar;
+
+public class cabActivity extends AppCompatActivity {
+
+    AutoCompleteTextView cab_pickup_location;
+    AutoCompleteTextView cab_drop_location;
+    EditText cab_date;
+    EditText cab_time;
+    Button cab_book_btn;
+    DatePickerDialog datePickerDialog;
+    TimePickerDialog timePickerDialog;
+    int currentHr;
+    int currentMin;
+    String cab_pickup, cab_drop;
+
+    String[] cities = {"Chennai", "Toothukkudi", "Erode", "Vellore", "Tiruppur", "Tiruchirappalli", "Tirunelveli", "Madurai", "Coimbatore"};
+    Calendar calendar;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_cab);
+
+        //AutoCompleteTextView
+        cab_pickup_location = (AutoCompleteTextView) findViewById(R.id.cab_pickUp_location);
+        cab_drop_location = (AutoCompleteTextView) findViewById(R.id.cab_drop_location);
+        ArrayAdapter<String> pickUpAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, cities);
+        ArrayAdapter<String> dropAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, cities);
+        cab_pickup_location.setThreshold(1);
+        cab_pickup_location.setAdapter(pickUpAdapter);
+
+
+        cab_pickup_location.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+               cab_pickup = pickUpAdapter.getItem(i);
+            }
+        });
+        cab_drop_location.setThreshold(1);
+        cab_drop_location.setAdapter(dropAdapter);
+        cab_drop_location.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                cab_drop = dropAdapter.getItem(i);
+            }
+        });
+
+
+        calendar = Calendar.getInstance();
+
+        cab_book_btn = (Button) findViewById(R.id.cab_book_btn);
+        cab_pickup_location = (AutoCompleteTextView) findViewById(R.id.cab_pickUp_location);
+        cab_drop_location = (AutoCompleteTextView) findViewById(R.id.cab_drop_location);
+        cab_date = (EditText) (findViewById(R.id.cab_date));
+        cab_time = (EditText) (findViewById(R.id.cab_time));
+
+
+        cab_date.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                int day = calendar.get(Calendar.DAY_OF_MONTH);
+                int month = calendar.get(Calendar.MONTH);
+                int year = calendar.get(Calendar.YEAR);
+
+                //DatePickerDialog
+
+                datePickerDialog = new DatePickerDialog(cabActivity.this, new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker datePicker, int year, int month, int dayOfMonth) {
+                        cab_date.setText(dayOfMonth + "/" + (month + 1) + "/" + year);
+                    }
+                }, year, month, day);
+                datePickerDialog.show();
+            }
+        });
+
+
+        //TimePickerDialog
+        currentHr = calendar.get(Calendar.HOUR);
+        currentMin = calendar.get(Calendar.MINUTE);
+
+        cab_time.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                timePickerDialog = new TimePickerDialog(cabActivity.this, new TimePickerDialog.OnTimeSetListener() {
+                    @Override
+                    public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
+                        cab_time.setText(hourOfDay + ":" + minute);
+                    }
+                }, currentHr, currentMin, false);
+                timePickerDialog.show();
+            }
+        });
+
+
+        cab_book_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                String pickUp = cab_pickup;
+                String drop = cab_drop;
+                String date = cab_date.getText().toString();
+                String time = cab_time.getText().toString();
+
+                if (TextUtils.isEmpty(pickUp)) {
+                    cab_pickup_location.setError("Please Enter Pick UP Location");
+                    cab_pickup_location.requestFocus();
+
+                } else if (TextUtils.isEmpty(drop)) {
+                    cab_drop_location.setError("Please Enter Drop Location");
+                    cab_drop_location.requestFocus();
+                } else if (TextUtils.isEmpty(date)) {
+                    cab_date.setError("Please Pick a Date");
+                    cab_date.requestFocus();
+                } else if (TextUtils.isEmpty(time)) {
+                    cab_time.setError("please set a Time");
+                    cab_time.requestFocus();
+                } else {
+
+                    Intent intent = new Intent(cabActivity.this, CabPassengerDetails.class);
+                    intent.putExtra("PickUpLocation", pickUp);
+                    intent.putExtra("DropLocation", drop);
+                    intent.putExtra("Date", date);
+                    intent.putExtra("Time", time);
+                    startActivity(intent);
+                }
+
+            }
+        });
+
+    }
+}
+
+BusActivity:
+package com.example.bookingapplication;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.Button;
+import android.widget.Toast;
+
+public class busActivity extends AppCompatActivity {
+
+    AutoCompleteTextView fromLocation;
+    AutoCompleteTextView dropLocation;
+    String _fromLocation, _dropLocation;
+    Button busSearchBtn;
+
+
+    String[] locations = {"Chennai", "Toothukkudi", "Erode", "Vellore", "Tiruppur", "Tiruchirappalli", "Tirunelveli", "Madurai", "Coimbatore"};
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_bus);
+
+        fromLocation = (AutoCompleteTextView) findViewById(R.id.bus_pickUp_location);
+        dropLocation = (AutoCompleteTextView) findViewById(R.id.bus_drop_location);
+
+        ArrayAdapter<String> pickupAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, locations);
+        fromLocation.setThreshold(1);
+        fromLocation.setAdapter(pickupAdapter);
+
+        fromLocation.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                _fromLocation = pickupAdapter.getItem(i);
+            }
+        });
+
+        ArrayAdapter<String> dropAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, locations);
+        dropLocation.setThreshold(1);
+        dropLocation.setAdapter(dropAdapter);
+
+        dropLocation.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                _dropLocation = dropAdapter.getItem(i);
+            }
+        });
+
+        busSearchBtn = (Button) findViewById(R.id.bus_search_btn);
+
+        busSearchBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(busActivity.this, _fromLocation + "\n"+_dropLocation, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+
+}
+trainActivity:
+package com.example.bookingapplication;
+
+import android.os.Bundle;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.bookingapplication.databinding.ActivityMainBinding;
+
+public class trainActivity extends AppCompatActivity {
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_train);
+    }
+
+}
+
+flightActivity:
+
+package com.example.bookingapplication;
+
+import android.os.Bundle;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.bookingapplication.databinding.ActivityMainBinding;
+
+public class flightActivity extends AppCompatActivity {
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_train);
+    }
+
+}
+----------------------------------------------------------------------------------------------------
+XML CODE:
+
+activity_main.xml:
+<?xml version="1.0" encoding="UTF-8" ?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/topView1"
+        android:layout_width="0sp"
+        android:layout_height="150sp"
+        android:background="@color/dark_magenta"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.526"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/topText1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="40sp"
+        android:text="Project Title"
+        android:textColor="@color/white"
+        android:textSize="34sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="@+id/topView1"
+        tools:ignore = "HardcodedText"/>
+
+    <View
+        android:id="@+id/View1"
+        android:layout_width="0sp"
+        android:layout_height="100sp"
+        android:background="@drawable/ic_wave"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/topView1" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="347sp"
+        android:layout_height="250sp"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="96dp"
+        android:layout_marginEnd="32sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/View1"
+        app:srcCompat="@drawable/starting_page_image" />
+
+    <TextView
+        android:id="@+id/BottomText"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="60dp"
+        android:text="Booking Tickets To Easy"
+        android:textColor="@color/dark_magenta"
+        android:textSize="24sp"
+        android:textAlignment="center"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageView"
+        app:layout_constraintVertical_bias="1.0" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+activityLoginPage:
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".LoginPage">
+
+    <TextView
+        android:id="@+id/topView"
+        android:layout_width="0sp"
+        android:layout_height="150sp"
+        android:background="@color/dark_magenta"
+        android:textColor="#E1BEE7"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/view2"
+        android:layout_width="0sp"
+        android:layout_height="100sp"
+        android:background="@drawable/ic_wave"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/topView"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <ImageView
+        android:id="@+id/imageView4"
+        android:layout_width="97sp"
+        android:layout_height="96sp"
+        android:layout_marginStart="16sp"
+        android:layout_marginTop="32sp"
+        android:layout_marginEnd="24sp"
+        android:contentDescription="TODO"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/topText"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_baseline_person_white_24" />
+
+    <TextView
+        android:id="@+id/topText"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16sp"
+        android:layout_marginTop="44sp"
+        android:text="Already Have an Account"
+        android:textColor="@color/white"
+        android:textSize="34sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@+id/imageView4"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/topView"
+        app:layout_constraintTop_toTopOf="@+id/topView" />
+
+    <EditText
+        android:id="@+id/login_email"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginEnd="32sp"
+        android:background="@drawable/round_border"
+        android:drawableStart="@drawable/ic_baseline_email_24"
+        android:drawablePadding="16sp"
+        android:ems="10"
+        android:hint="Email"
+        android:inputType="text"
+        android:minHeight="48sp"
+        android:padding="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/view2" />
+
+    <EditText
+        android:id="@+id/login_password"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="16sp"
+        android:layout_marginEnd="32sp"
+        android:background="@drawable/round_border"
+        android:drawableStart="@drawable/ic_baseline_lock_24"
+        android:drawablePadding="16sp"
+        android:ems="10"
+        android:hint="Password"
+        android:inputType="textPassword"
+        android:minHeight="48sp"
+        android:padding="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/login_email" />
+
+    <Button
+        android:id="@+id/loginbtn"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="16sp"
+        android:layout_marginEnd="32sp"
+        android:background="@drawable/round_bg"
+        android:text="LOGIN"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/login_password"
+        tools:ignore = "HardcodedText"/>
+
+    <TextView
+        android:id="@+id/forget_Password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="16sp"
+        android:layout_marginEnd="32sp"
+        android:text="Forget Password?"
+        android:textColor="@color/dark_magenta"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/loginbtn" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="32sp"
+        android:layout_marginEnd="32sp"
+        android:text="OR"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/forget_Password" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="0sp"
+        android:layout_height="30sp"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="16sp"
+        android:layout_marginEnd="32sp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView4">
+
+        <ImageView
+            android:id="@+id/googleLogo"
+            android:layout_width="218sp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            app:srcCompat="@drawable/google" />
+
+        <ImageView
+            android:id="@+id/facebookLogo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:srcCompat="@drawable/fb" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/goto_sign_up"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="32sp"
+        android:layout_marginEnd="32sp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:text="New User?Sign Up"
+        android:textColor="@color/dark_magenta"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+activity_signUPPage:
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/signup_txt1"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/sign_up_txt1"
+        android:layout_width="0sp"
+        android:layout_height="150sp"
+        android:background="@color/dark_magenta"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/sign_up_view1"
+        android:layout_width="0sp"
+        android:layout_height="100sp"
+        android:background="@drawable/ic_wave"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sign_up_txt1" />
+
+    <EditText
+        android:id="@+id/sign_up_userEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="16sp"
+        android:layout_marginEnd="32sp"
+        android:background="@drawable/round_border"
+        android:drawableStart="@drawable/ic_baseline_email_24"
+        android:drawablePadding="16sp"
+        android:ems="10"
+        android:hint="Email"
+        android:inputType="textPersonName"
+        android:minHeight="48sp"
+        android:padding="16sp"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sign_up_view1" />
+
+    <EditText
+        android:id="@+id/sign_up_user_Name"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="16sp"
+        android:layout_marginEnd="32sp"
+        android:background="@drawable/round_border"
+        android:drawableStart="@drawable/ic_baseline_person_24"
+        android:drawablePadding="16sp"
+        android:ems="10"
+        android:hint="Username"
+        android:inputType="textPersonName"
+        android:padding="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sign_up_userEmail" />
+
+    <TextView
+        android:id="@+id/sign_up_title_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16sp"
+        android:layout_marginTop="84sp"
+        android:text="Sign Up Now"
+        android:textColor="@color/white"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/sign_up_txt1" />
+
+    <EditText
+        android:id="@+id/sign_up_address"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="16sp"
+        android:layout_marginEnd="32sp"
+        android:background="@drawable/round_border"
+        android:drawableStart="@drawable/ic_baseline_event_note_24"
+        android:drawablePadding="16sp"
+        android:ems="10"
+        android:hint="Address"
+        android:inputType="textPersonName"
+        android:padding="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sign_up_user_Name" />
+
+    <EditText
+        android:id="@+id/sign_up_pass"
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="16sp"
+        android:layout_marginEnd="32sp"
+        android:background="@drawable/round_border"
+        android:drawableStart="@drawable/ic_baseline_person_24"
+        android:drawablePadding="16sp"
+        android:ems="10"
+        android:hint="password"
+        android:inputType="textPersonName"
+        android:padding="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sign_up_address"/>
+
+    <Button
+        android:id="@+id/signUpBtn"
+        android:layout_width="347sp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16sp"
+        android:background="@drawable/round_bg"
+        android:text="SIGN UP"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sign_up_pass" />
+
+    <TextView
+        android:id="@+id/goto_login"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32sp"
+        android:layout_marginTop="16sp"
+        android:layout_marginEnd="32sp"
+        android:text="Already Have an Account?Login"
+        android:textColor="@color/dark_magenta"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/signUpBtn" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+activityHomePage:
+<?xml version="1.0" encoding="UTF-8" ?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background">
+
+    <View
+        android:id="@+id/homeView"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="@drawable/background2" />
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:padding="20dp">
+
+        <ImageView
+            android:id="@+id/home_menu_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            app:srcCompat="@drawable/ic_baseline_menu_24" />
+
+        <TextView
+            android:id="@+id/homeText1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Welcome"
+            android:textColor="@color/white"
+            android:layout_below="@+id/home_menu_btn"
+            android:textSize="42sp"
+            android:textStyle="bold"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/homeUserEmail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/homeText1"
+            android:layout_marginTop="15dp"
+            android:text="useremail@gmail.com"
+            android:textColor="@color/ivory"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:ignore="HardcodedText" />
+    </RelativeLayout>
+
+    <ImageView
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_alignParentRight="true"
+        android:layout_margin="10dp"
+        android:src="@drawable/ic_project_logo" />
+
+    <TabHost
+        android:id="@+id/tabHost"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/homeView"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TabWidget
+                android:id="@android:id/tabs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <FrameLayout
+                android:id="@android:id/tabcontent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:id="@+id/tab1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="1dp"
+                    android:background="@drawable/taxi_new_new"
+                    android:orientation="vertical">
+
+                    <RelativeLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:id="@+id/taxiQuotes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="30dp"
+                            android:alpha="0.6"
+                            android:background="@drawable/text_border"
+                            android:padding="10dp"
+                            android:text="Our customers and drivers must wear a protective mask during the entire journey."
+                            android:textColor="@color/black"
+                            android:textSize="25sp"
+                            tools:ignore="HardcodedText" />
+
+                        <Button
+                            android:id="@+id/cab_book_btn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@+id/taxiQuotes"
+                            android:layout_centerHorizontal="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginTop="25dp"
+                            android:background="@drawable/image_border2"
+                            android:text="Book Now"
+                            android:textSize="22sp"
+                            android:textStyle="italic"
+                            tools:ignore="HardcodedText" />
+                    </RelativeLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="1dp"
+                    android:background="@drawable/bus_new_new"
+                    android:orientation="vertical">
+
+                    <RelativeLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:id="@+id/busQuotes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="30dp"
+                            android:alpha="0.6"
+                            android:background="@drawable/text_border"
+                            android:padding="10dp"
+                            android:text="Our customers and drivers must wear a protective mask during the entire journey."
+                            android:textColor="@color/black"
+                            android:textSize="25sp"
+                            tools:ignore="HardcodedText" />
+
+                        <Button
+                            android:id="@+id/bus_book_btn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@+id/busQuotes"
+                            android:layout_centerHorizontal="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginTop="25dp"
+                            android:background="@drawable/image_border2"
+                            android:text="Book Now"
+                            android:textSize="22sp"
+                            android:textStyle="italic"
+                            tools:ignore="HardcodedText" />
+                    </RelativeLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab3"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="1dp"
+                    android:background="@drawable/train_new_new"
+                    android:orientation="vertical">
+
+                    <RelativeLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:id="@+id/trainQuotes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="30dp"
+                            android:alpha="0.6"
+                            android:background="@drawable/text_border"
+                            android:padding="10dp"
+                            android:text="Our customers and drivers must wear a protective mask during the entire journey."
+                            android:textColor="@color/black"
+                            android:textSize="25sp"
+                            tools:ignore="HardcodedText" />
+
+                        <Button
+                            android:id="@+id/train_book_btn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@+id/trainQuotes"
+                            android:layout_centerHorizontal="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginTop="25dp"
+                            android:background="@drawable/image_border2"
+                            android:text="Book Now"
+                            android:textSize="22sp"
+                            android:textStyle="italic"
+                            tools:ignore="HardcodedText" />
+                    </RelativeLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/tab4"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="1dp"
+                    android:background="@drawable/flight_new"
+                    android:orientation="vertical">
+
+                    <RelativeLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:id="@+id/flightQuotes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="30dp"
+                            android:alpha="0.4"
+                            android:background="@drawable/text_border"
+                            android:padding="10dp"
+                            android:text="Our customers and drivers must wear a protective mask during the entire journey."
+                            android:textColor="@color/black"
+                            android:textSize="25sp"
+                            tools:ignore="HardcodedText" />
+
+                        <Button
+                            android:id="@+id/flight_book_btn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@+id/flightQuotes"
+                            android:layout_centerHorizontal="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginTop="25dp"
+                            android:background="@drawable/image_border2"
+                            android:text="Book Now"
+                            android:textSize="22sp"
+                            android:textStyle="italic"
+                            tools:ignore="HardcodedText" />
+                    </RelativeLayout>
+                </LinearLayout>
+
+            </FrameLayout>
+        </LinearLayout>
+    </TabHost>
+</RelativeLayout>
